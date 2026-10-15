@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Сканер</title>
+<style>
+:root{--fb:#232323;--bd:#fff;--tx:#fff;--glow:rgba(255,255,255,.6)}
+html,body{height:100%;margin:0;background:#000;color:#fff;overflow:hidden;font-family:"Oswald","Arial Narrow",Impact,sans-serif;-webkit-user-select:none;user-select:none}
+#scr{position:fixed;inset:0;background:#000}
+.idle{--fb:#1f6d25;--bd:#fff;--tx:#c9f5c3;--glow:rgba(90,255,100,.85)}
+.idle #ico{display:none}
+.idle #frame{background:radial-gradient(circle at 50% 50%,#2f8f34 0,#1f6d25 65%,#175a1d 100%)}
+.idle #nz{opacity:.2}
+.idle.burst #nz{opacity:.95;mix-blend-mode:normal;filter:sepia(1) hue-rotate(55deg) saturate(5) brightness(1.1)}
+#scn{display:none;position:absolute;left:50%;top:55%;width:64vmin;height:64vmin;transform:translate(-50%,-50%)}
+.idle #scn{display:block}
+#scn svg{width:100%;height:100%;overflow:visible}
+#scn .land{animation:drift 14s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translateX(-2.5px)}to{transform:translateX(2.5px)}}
+#scn .star{transform-origin:50px 50px;animation:pulse 1.6s ease-in-out infinite;filter:drop-shadow(0 0 2vmin #9dff7a)}
+@keyframes pulse{50%{transform:scale(1.18);opacity:.8}}
+#scn .e{position:absolute;left:58%;top:50%;width:8.5vmin;height:8.5vmin;background:#f4dcc2;border-radius:1.4vmin;color:#3a2a20;font:900 5.6vmin Arial,sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 0 1.5vmin rgba(0,0,0,.35)}
+.cyan{--fb:#0b6a80;--bd:#9ff6ff;--tx:#b4f8ff;--glow:rgba(40,220,255,.85)}
+.purple{--fb:#2a1c96;--bd:#c6b0ff;--tx:#cdbcff;--glow:rgba(150,110,255,.8)}
+.red{--fb:#a50808;--bd:#ff5a5a;--tx:#ff8d8d;--glow:rgba(255,40,40,.85)}
+#frame{position:absolute;inset:4vmin;border:1.2vmin solid var(--bd);background:var(--fb);box-shadow:0 0 6vmin var(--glow),inset 0 0 6vmin var(--glow);overflow:hidden}
+#nz{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;opacity:.22;mix-blend-mode:overlay}
+#lines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 2px,transparent 2px 5px)}
+#fl{position:absolute;inset:0;background:#000;opacity:0;transition:opacity .3s}
+#bat{position:absolute;left:4vmin;top:4vmin;display:flex;gap:.8vmin;padding:1vmin;border:.5vmin solid var(--tx);border-radius:1vmin;opacity:.9}
+#bat i{display:block;width:2.6vmin;height:4.4vmin;background:var(--tx)}
+#bat i.off{opacity:.12}
+#ttl{position:absolute;right:4vmin;top:5vmin;color:var(--tx);font-size:5vmin;letter-spacing:.25vmin;opacity:.85;text-transform:uppercase}
+#ico{position:absolute;left:50%;top:50%;width:62vmin;height:62vmin;transform:translate(-50%,-44%);color:var(--tx);opacity:.42}
+.idle #ico,.cyan #ico{opacity:.95;filter:drop-shadow(0 0 1.5vmin var(--glow))}
+#ico svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+#txt{position:absolute;left:7vmin;right:7vmin;bottom:9vmin;color:#fff;font-size:6.2vmin;line-height:1.15;text-shadow:0 0 1.2vmin rgba(0,0,0,.5);white-space:pre-line;display:none}
+#txt small{display:block;font-weight:700;font-size:3vmin;opacity:.85;margin-bottom:.8vmin}
+.purple #txt{display:block}
+#start{position:fixed;inset:0;z-index:10;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;font-family:system-ui,sans-serif}
+#err{color:#ff9a9a;max-width:420px;font-size:14px;min-height:18px}
+button{font:inherit;font-family:system-ui,sans-serif;color:#fff;background:#0a84ff;border:0;border-radius:10px;padding:12px 18px}
+button.sec{background:#3a3a3c}
+#gear{position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:6px;z-index:5;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.4);padding:0;font-size:20px;opacity:.12}
+#panel{position:fixed;inset:0;z-index:6;background:#1c1c1e;overflow:auto;padding:calc(env(safe-area-inset-top,0px) + 16px) 16px 24px;opacity:0;pointer-events:none;font-family:system-ui,sans-serif;-webkit-user-select:auto;user-select:auto}
+#panel.open{opacity:1;pointer-events:auto}
+.cam{position:relative;width:240px;max-width:100%;aspect-ratio:4/3;background:#000;border-radius:10px;overflow:hidden}
+.cam video{width:100%;height:100%;object-fit:cover}
+.cam i{position:absolute;left:50%;top:50%;width:14%;aspect-ratio:1;transform:translate(-50%,-50%);border:2px solid #fff;box-shadow:0 0 0 1px #000}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid #3a3a3c}
+.sw{width:28px;height:28px;border-radius:6px;border:1px solid #888}
+.row b{flex:1;min-width:110px}
+.row button{padding:8px 12px;font-size:14px}
+#now{margin:12px 0;font-size:15px}
+small.n{opacity:.7}
+</style></head>
+<body>
+<div id="root">
+<div id="scr" class="idle">
+  <div id="frame">
+    <canvas id="nz" width="90" height="90"></canvas>
+    <div id="bat"></div><div id="ttl"></div>
+    <div id="ico"></div><div id="txt"></div>
+    <div id="scn">
+      <svg viewBox="0 0 100 100">
+        <g fill="none" stroke="#c4f7ba" stroke-width="1.1" opacity=".5">
+          <ellipse cx="50" cy="50" rx="40" ry="38"/>
+          <g class="land" fill="#9be690" fill-opacity=".35">
+            <path d="M16 38c8-12 20-10 28-16s17-1 21 7-5 13-13 13-11 11-19 7-17-4-17-11z"/>
+            <path d="M58 58c8-6 17-3 20 4s-3 14-12 14-14-4-13-9 1-6 5-9z"/>
+            <path d="M24 62c5-3 11 0 12 5s-4 9-9 8-7-9-3-13z"/>
+          </g>
+        </g>
+        <polygon class="star" points="50,26 55.5,44.5 74,50 55.5,55.5 50,74 44.5,55.5 26,50 44.5,44.5" fill="#b9ff9d"/>
+      </svg>
+      <div class="e">E</div>
+    </div>
+    <div id="lines"></div><div id="fl"></div>
+  </div>
+</div>
+<button id="gear" class="sec">⚙</button>
+
+<div id="start">
+  <h2 style="margin:0">Сканер с модулями</h2>
+  <p style="margin:0;opacity:.8">Нажми, чтобы включить камеру</p>
+  <button id="go">Запустить на весь экран</button>
+  <div id="err"></div>
+</div>
+
+<div id="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h3 style="margin:0">Настройки</h3>
+    <span><button id="fs" class="sec">На весь экран</button> <button id="close" class="sec">Закрыть</button></span>
+  </div>
+  <p><small class="n">Наведи квадратик на цветную метку. Вставь модуль и нажми «Запомнить цвет» у нужного экрана. «Без модуля» калибруй с пустым слотом.</small></p>
+  <div class="cam"><video id="cam" playsinline muted autoplay></video><i></i></div>
+  <div id="now"></div>
+  <div style="margin:8px 0"><small class="n">Строгость распознавания: чем меньше число, тем строже. Если цвет не похож на модуль, показывается обычный сканер.</small><br><input id="th" type="range" min="20" max="120" style="width:100%"></div>
+  <div style="margin:8px 0"><small class="n">Поворот картинки (сам экран телефона и браузер не поворачиваются, меняется только изображение):</small><br><span id="rot"></span></div>
+  <div id="rows"></div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const S=[
+ {id:'idle',name:'Без модуля (зелёный сканер)',ref:[20,20,20],sw:'#2e8b34',t:'Scanner',cells:4,
+  svg:'<circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="6"/><path d="M50 10v14M50 76v14M10 50h14M76 50h14"/>'},
+ {id:'cyan',name:'Голубой — фонарик',ref:[60,200,220],sw:'#2ad0e8',t:'Flashlight',cells:4,
+  svg:'<g transform="rotate(-38 50 50)"><path d="M33 14h34l-7 18v46a5 5 0 0 1-5 5h-10a5 5 0 0 1-5-5V32z"/><path d="M33 14h34M40 32h20"/><rect x="46" y="44" width="8" height="12" rx="3"/></g>'},
+ {id:'purple',name:'Фиолетовый — переводчик',ref:[110,50,160],sw:'#6e32a0',t:'Translator',cells:2,
+  svg:'<path d="M16 24h68a6 6 0 0 1 6 6v38a6 6 0 0 1-6 6H46L30 88V74H16a6 6 0 0 1-6-6V30a6 6 0 0 1 6-6z"/><path d="M34 52a17 17 0 0 1 30-9M66 38v8h-8"/><path d="M66 56a17 17 0 0 1-30 9M34 70v-8h8"/>'},
+ {id:'red',name:'Красный — детектор угроз',ref:[200,40,40],sw:'#c82828',t:'Threat Detector',cells:4,
+  svg:'<circle cx="44" cy="44" r="33"/><path d="M68 68l22 22"/><path d="M44 22l20 36H24z"/><path d="M44 36v11M44 52.5v.5"/>'}
+];
+try{const s=JSON.parse(localStorage.getItem('refs2')||'null');if(s)S.forEach(x=>{if(s[x.id])x.ref=s[x.id]})}catch(e){}
+const save=()=>{try{localStorage.setItem('refs2',JSON.stringify(Object.fromEntries(S.map(x=>[x.id,x.ref]))))}catch(e){}};
+
+// ---------- экран сканера ----------
+const scr=$('scr');let shown=null;
+const PH=['name.\nsalutation!','shop open.\nwelcome!','name.\ncalculator!'];
+const tw={i:0,c:0,w:0};
+function show(s){
+  if(shown===s)return;shown=s;
+  scr.className=s.id;$('ttl').textContent=s.t;
+  $('bat').innerHTML=Array.from({length:4},(_,i)=>'<i class="'+(i<s.cells?'':'off')+'"></i>').join('');
+  $('ico').innerHTML='<svg viewBox="0 0 100 100">'+s.svg+'</svg>';
+  tw.c=0;tw.w=0;$('txt').innerHTML='';
+  const f=$('fl');f.style.transition='none';f.style.opacity=.9;requestAnimationFrame(()=>requestAnimationFrame(()=>{f.style.transition='opacity .3s';f.style.opacity=0}));
+}
+setInterval(()=>{
+  if(shown&&shown.id!=='purple')return;
+  const f=PH[tw.i];
+  if(tw.c<f.length){tw.c++;tw.w=0}else if(++tw.w>45){tw.i=(tw.i+1)%PH.length;tw.c=0;tw.w=0}
+  $('txt').innerHTML='<small>COBBLER</small>'+f.slice(0,tw.c);
+},70);
+setInterval(()=>{if(shown&&shown.id==='idle'){scr.classList.add('burst');setTimeout(()=>scr.classList.remove('burst'),350)}},9000);
+const nc=$('nz').getContext('2d');let fr=0;
+(function loop(){
+  requestAnimationFrame(loop);
+  if(fr++%3===0){const d=nc.createImageData(90,90);for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}nc.putImageData(d,0,0)}
+})();
+
+// ---------- определение цвета ----------
+const cam=$('cam'),cv=document.createElement('canvas');cv.width=cv.height=16;
+const cx=cv.getContext('2d',{willReadFrequently:true});
+function sample(){
+  const w=cam.videoWidth,h=cam.videoHeight;if(!w)return null;
+  const s=Math.min(w,h)*.14;
+  cx.drawImage(cam,(w-s)/2,(h-s)/2,s,s,0,0,16,16);
+  const d=cx.getImageData(0,0,16,16).data;let r=0,g=0,b=0,n=d.length/4;
+  for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2]}
+  return [r/n,g/n,b/n];
+}
+const feat=c=>{const m=(c[0]+c[1]+c[2])/3||1;return [c[0]/m*80,c[1]/m*80,c[2]/m*80,m*.6]};
+let TH=60;try{TH=+localStorage.getItem('th')||60}catch(e){}
+let lastD=0;
+function classify(c){const f=feat(c);let best=null,bd=1e9;
+  for(const s of S){const g=feat(s.ref);let d=0;for(let i=0;i<4;i++)d+=(f[i]-g[i])**2;d=Math.sqrt(d);if(d<bd){bd=d;best=s}}
+  lastD=bd;
+  if(best.id!=='idle'&&bd>TH)return S[0];   // цвет не похож ни на один модуль -> обычный сканер
+  return best}
+let cand=null,cnt=0;
+function tick(){
+  const c=sample();if(!c)return;const s=classify(c);
+  $('now').textContent='Сейчас видит: '+s.name+'  (RGB '+c.map(Math.round).join(', ')+', отличие '+Math.round(lastD)+' из '+TH+')';
+  if(s===cand)cnt++;else{cand=s;cnt=1}
+  if(cnt>=5)show(s);
+}
+
+// ---------- настройки ----------
+function rows(){
+  $('rows').innerHTML='';
+  S.forEach(s=>{
+    const r=document.createElement('div');r.className='row';
+    const sw=document.createElement('div');sw.className='sw';sw.style.background='rgb('+s.ref.map(Math.round)+')';
+    const t=document.createElement('b');t.textContent=s.name;
+    const a=document.createElement('button');a.textContent='Запомнить цвет';
+    a.onclick=()=>{const c=sample();if(c){s.ref=c;save();rows();cand=null;cnt=0}};
+    const b=document.createElement('button');b.className='sec';b.textContent='Показать';
+    b.onclick=()=>{show(s);$('panel').classList.remove('open')};
+    r.append(sw,t,a,b);$('rows').append(r);
+  });
+}
+// только поворачиваем картинку на странице; ориентацию экрана телефона/браузера не трогаем
+const root=$('root');let ROT='auto';try{ROT=localStorage.getItem('rot')||'auto'}catch(e){}
+function fit(){const W=innerWidth,H=innerHeight,s=root.style;
+  const a=ROT==='auto'?(H>W?90:0):+ROT;
+  s.position='fixed';s.left='0';s.top='0';s.transformOrigin='0 0';
+  const sw=(a===90||a===270);
+  s.width=(sw?H:W)+'px';s.height=(sw?W:H)+'px';
+  s.transform=a===90?'translateX('+W+'px) rotate(90deg)':a===180?'translate('+W+'px,'+H+'px) rotate(180deg)':a===270?'translateY('+H+'px) rotate(270deg)':'none'}
+addEventListener('resize',fit);fit();
+function setRot(r){ROT=r;try{localStorage.setItem('rot',r)}catch(e){}fit()}
+async function goFull(){const e=document.documentElement;
+  try{await (e.requestFullscreen||e.webkitRequestFullscreen||function(){}).call(e)}catch(x){}}
+$('gear').onclick=()=>$('panel').classList.add('open');
+$('close').onclick=()=>$('panel').classList.remove('open');
+$('fs').onclick=()=>{goFull();$('panel').classList.remove('open')};
+rows();show(S[0]);
+$('th').value=TH;
+$('th').oninput=()=>{TH=+$('th').value;try{localStorage.setItem('th',TH)}catch(e){}};
+[['auto','Авто'],['0','0°'],['90','90°'],['180','180°'],['270','270°']].forEach(([v,l])=>{
+  const b=document.createElement('button');b.className='sec';b.style.margin='4px 4px 0 0';b.textContent=l;b.onclick=()=>setRot(v);$('rot').append(b)});
+
+$('go').onclick=async()=>{
+  $('err').textContent='';
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    $('err').textContent='Камера недоступна. Открой страницу по https-ссылке в обычном браузере (Chrome/Safari), а не файлом и не внутри мессенджера.';return}
+  try{
+    const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:640},height:{ideal:480}},audio:false});
+    cam.srcObject=st;await cam.play();
+  }catch(e){$('err').textContent='Не удалось включить камеру ('+e.name+'). Проверь разрешение для сайта в настройках браузера.';return}
+  try{if('wakeLock' in navigator)await navigator.wakeLock.request('screen')}catch(e){}
+  $('start').style.display='none';goFull();
+  setInterval(tick,100);
+};
+document.addEventListener('visibilitychange',async()=>{if(!document.hidden){try{await navigator.wakeLock.request('screen')}catch(e){}}});
+</script>
+</body></html>
